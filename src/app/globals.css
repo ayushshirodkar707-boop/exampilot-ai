@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0f172a;
+    --card: #f8fafc;
+    --card-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --muted: #64748b;
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+  }
+  
+  .dark {
+    --background: #0f172a;
+    --foreground: #f8fafc;
+    --card: #1e293b;
+    --card-hover: #334155;
+    --border: #334155;
+    --muted: #94a3b8;
+    --accent: #818cf8;
+    --accent-light: #a5b4fc;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-200 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 active:scale-[0.98];
+  }
+  
+  .btn-secondary {
+    @apply bg-[var(--card)] hover:bg-[var(--card-hover)] text-[var(--foreground)] font-semibold py-2.5 px-6 rounded-xl border border-[var(--border)] transition-all duration-200 active:scale-[0.98];
+  }
+  
+  .btn-ghost {
+    @apply hover:bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] font-medium py-2 px-4 rounded-lg transition-all duration-200;
+  }
+  
+  .card {
+    @apply bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 transition-all duration-200;
+  }
+  
+  .card-hover {
+    @apply card hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 cursor-pointer;
+  }
+  
+  .input-field {
+    @apply w-full bg-[var(--background)] border border-[var(--border)] rounded-xl px-4 py-3 text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  }
+  
+  .label {
+    @apply block text-sm font-semibold text-[var(--foreground)] mb-2;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 via-primary-500 to-purple-500 bg-clip-text text-transparent;
+  }
+  
+  .ad-slot {
+    @apply border-2 border-dashed border-[var(--border)] rounded-xl bg-[var(--card)] flex items-center justify-center text-[var(--muted)] text-sm;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Pomodoro timer ring animation */
+@keyframes countdown {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 283; }
+}
