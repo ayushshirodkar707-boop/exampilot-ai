@@ -24,12 +24,7 @@ import {
 
 export default function HomePage() {
   const router = useRouter();
-  const { isAuthenticated, signInAsGuest } = useAuth();
-
-  const handleStartGuest = () => {
-    signInAsGuest();
-    router.push('/onboarding');
-  };
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -314,12 +309,18 @@ export default function HomePage() {
           </p>
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              onClick={handleStartGuest}
-              className="btn-primary py-3.5 px-8 text-base font-bold shadow-xl shadow-primary-500/20"
-            >
-              Start Instantly as Guest
-            </button>
+            {isAuthenticated ? (
+              <Link
+                href="/dashboard"
+                className="btn-primary py-3.5 px-8 text-base font-bold shadow-xl shadow-primary-500/20"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <div className="w-full max-w-xs">
+                <LoginButton />
+              </div>
+            )}
             <Link
               href="/guides"
               className="btn-secondary py-3.5 px-8 text-base font-semibold"

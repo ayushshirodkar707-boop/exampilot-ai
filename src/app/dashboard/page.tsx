@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyData } from '@/hooks/useStudyData';
+import AuthModal from '@/components/auth/AuthModal';
 import Sidebar from '@/components/layout/Sidebar';
 import AdSidebar from '@/components/layout/AdSidebar';
 import AdSlot from '@/components/ads/AdSlot';
@@ -29,11 +30,20 @@ import {
   AlertCircle,
   School,
   Clock,
+  LogIn,
+  Mail,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, isGuest, isAuthenticated, isLoading: authLoading, signInAsGuest } = useAuth();
+  const {
+    user,
+    isAuthenticated,
+    isEmailVerified,
+    resendVerificationEmail,
+    isLoading: authLoading,
+  } = useAuth();
   const {
     profile,
     plan,
@@ -52,25 +62,60 @@ export default function DashboardPage() {
   const [testChapter, setTestChapter] = useState<string | undefined>(undefined);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showMissedModal, setShowMissedModal] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   // Helper for minimum 1.5s loading
   const wait1500ms = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
   };
 
-  // Auto-init guest mode if visitor reaches dashboard without login
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      signInAsGuest();
+  const handleResendVerification = async () => {
+    const res = await resendVerificationEmail();
+    if (res.success) {
+      setResendStatus('Verification link sent! Please check your inbox & spam folder.');
+      setTimeout(() => setResendStatus(null), 5000);
+    } else {
+      setResendStatus(res.error || 'Failed to resend. Please try again later.');
     }
-  }, [authLoading, isAuthenticated, signInAsGuest]);
+  };
 
   // Loading screen
-  if (authLoading || (dataLoading && !plan)) {
+  if (authLoading || (dataLoading && !plan && isAuthenticated)) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
         <div className="w-10 h-10 border-3 border-primary-500 border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-sm text-[var(--muted)]">Loading your personal exam cockpit...</p>
+      </div>
+    );
+  }
+
+  // Not Authenticated Gate
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto">
+        <div className="w-14 h-14 rounded-2xl bg-primary-100 dark:bg-primary-950/50 flex items-center justify-center text-primary-600 dark:text-primary-400 mb-4 shadow-sm">
+          <LogIn className="w-7 h-7" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Sign In to Access Your Dashboard
+        </h2>
+        <p className="mt-2 text-sm text-[var(--muted)] mb-6">
+          Sign in or create your free account to access your customized exam timetable, daily tasks, and MCQ test arena.
+        </p>
+        <button
+          onClick={() => setAuthModalOpen(true)}
+          className="btn-primary py-3 px-6 text-sm font-semibold flex items-center gap-2 shadow-lg shadow-primary-500/25"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Sign In / Create Account</span>
+        </button>
+
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          defaultMode="signin"
+        />
       </div>
     );
   }
@@ -303,7 +348,7 @@ export default function DashboardPage() {
           onSectionChange={setActiveSection}
           examName={profile?.exam || plan.exam}
           examDate={profile?.examDate || new Date(Date.now() + 45 * 86400000).toISOString()}
-          userName={user?.displayName || (isGuest ? 'Guest Student' : 'Student')}
+          userName={user?.displayName || user?.email?.split('@')[0] || 'Student'}
           userAvatar={user?.photoURL}
           streakCount={streak}
           onChangeExam={() => router.push('/onboarding')}
@@ -311,6 +356,37 @@ export default function DashboardPage() {
 
         {/* Column 2: Main Workspace Center */}
         <div className="flex-1 min-w-0 space-y-6">
+          {/* Email Verification Banner (Free Firebase Email Verification) */}
+          {!isEmailVerified && user?.email && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-900/60 dark:bg-amber-950/30 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <div>
+                  <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                    Verify your email address for account recovery &amp; backups
+                  </p>
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300/80">
+                    A free verification link was sent to <span className="font-semibold">{user.email}</span>. Click the link in your inbox to confirm.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {resendStatus ? (
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    {resendStatus}
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleResendVerification}
+                    className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 transition-colors"
+                  >
+                    Resend Verification
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Quick Streak & Routine Bar */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">

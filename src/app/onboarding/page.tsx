@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { countries } from '@/lib/examData';
 import { useAuth } from '@/hooks/useAuth';
 import { useStudyData } from '@/hooks/useStudyData';
+import AuthModal from '@/components/auth/AuthModal';
 import CountrySelector from '@/components/onboarding/CountrySelector';
 import ExamSelector from '@/components/onboarding/ExamSelector';
 import SubjectSelector from '@/components/onboarding/SubjectSelector';
@@ -12,11 +13,11 @@ import DailyRoutineForm from '@/components/onboarding/DailyRoutineForm';
 import StudentDetailsForm from '@/components/onboarding/StudentDetailsForm';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
 import type { CountryData, ExamData, OnboardingData, Chapter, UserProfile, DailyRoutine } from '@/types';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles, LogIn } from 'lucide-react';
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isAuthenticated, isGuest, signInAsGuest } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { setProfile, setPlan, setChapters } = useStudyData();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5>(1);
@@ -39,18 +40,12 @@ export default function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingTitle, setLoadingTitle] = useState('AI Flight Controller is Calibrating Your Plan');
   const [loadingSubtitle, setLoadingSubtitle] = useState('Crafting realistic day-by-day study sessions around your real commitments...');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Helper for minimum 1.5 second loading experience requested by user
   const wait1500ms = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
   };
-
-  // If user visits /onboarding without logging in, auto-initialize guest mode
-  useEffect(() => {
-    if (!isAuthenticated) {
-      signInAsGuest();
-    }
-  }, [isAuthenticated, signInAsGuest]);
 
   const currentCountry = countries.find((c) => c.code === selectedCountryCode) || countries[0];
   const currentExam = currentCountry.exams.find((e) => e.id === selectedExamId);
@@ -182,11 +177,17 @@ export default function OnboardingPage() {
         }
       });
 
+      if (!isAuthenticated) {
+        setIsLoading(false);
+        setAuthModalOpen(true);
+        return;
+      }
+
       // Save profile, plan, and syllabus chapters
       const newProfile: UserProfile = {
-        uid: isGuest ? 'guest' : 'user',
-        displayName: isGuest ? 'Guest Student' : 'Student',
-        email: 'student@exampilot.ai',
+        uid: user?.uid || 'user',
+        displayName: user?.displayName || user?.email?.split('@')[0] || 'Student',
+        email: user?.email || '',
         country: currentCountry.name,
         exam: finalExamName,
         examDate: details.examDate,
@@ -307,6 +308,12 @@ export default function OnboardingPage() {
           />
         )}
       </div>
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        defaultMode="signup"
+      />
     </div>
   );
 }

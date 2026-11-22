@@ -41,7 +41,7 @@ interface UseStudyDataReturn {
 }
 
 export function useStudyData(): UseStudyDataReturn {
-  const { user, isGuest, guestProfile } = useAuth();
+  const { user } = useAuth();
 
   const [profile, setProfileState] = useState<UserProfile | null>(null);
   const [plan, setPlanState] = useState<StudyPlan | null>(null);
@@ -51,8 +51,8 @@ export function useStudyData(): UseStudyDataReturn {
   const [loading, setLoading] = useState(true);
 
   // Determine the storage backend based on auth state
-  const uid = user?.uid ?? (isGuest ? 'guest' : null);
-  const useFirestore = !!user && !isGuest;
+  const uid = user?.uid ?? null;
+  const useFirestore = !!user;
 
   // ── Load all data on mount or auth change ─────────────────────────
   useEffect(() => {
@@ -84,13 +84,14 @@ export function useStudyData(): UseStudyDataReturn {
 
           if (cancelled) return;
 
-          setProfileState(fsProfile);
-          setPlanState(fsPlan);
-          setChaptersState(fsChapters);
-          setMockTestsState(fsMockTests);
-          setStreak(fsProfile?.streak ?? 0);
+          // If firestore has profile, use it; otherwise fallback to local profile cache
+          const activeProfile = fsProfile ?? getLocalProfile();
+          setProfileState(activeProfile);
+          setPlanState(fsPlan ?? getLocalPlan());
+          setChaptersState(fsChapters.length > 0 ? fsChapters : getLocalChapters());
+          setMockTestsState(fsMockTests.length > 0 ? fsMockTests : getLocalMockTests());
+          setStreak(activeProfile?.streak ?? 0);
         } else {
-          // ── localStorage backend (guest) ───────────────────────
           const localProfile = getLocalProfile();
           const localPlan = getLocalPlan();
           const localChapters = getLocalChapters();
@@ -98,14 +99,21 @@ export function useStudyData(): UseStudyDataReturn {
 
           if (cancelled) return;
 
-          setProfileState(localProfile ?? guestProfile);
+          setProfileState(localProfile);
           setPlanState(localPlan);
           setChaptersState(localChapters);
           setMockTestsState(localMockTests);
-          setStreak(localProfile?.streak ?? guestProfile?.streak ?? 0);
+          setStreak(localProfile?.streak ?? 0);
         }
       } catch (error) {
         console.error('Failed to load study data:', error);
+        // Fallback to local cache so user never sees blank screen
+        const localProfile = getLocalProfile();
+        setProfileState(localProfile);
+        setPlanState(getLocalPlan());
+        setChaptersState(getLocalChapters());
+        setMockTestsState(getLocalMockTests());
+        setStreak(localProfile?.streak ?? 0);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -116,7 +124,7 @@ export function useStudyData(): UseStudyDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [uid, useFirestore, guestProfile]);
+  }, [uid, useFirestore]);
 
   // ── Setters ────────────────────────────────────────────────────────
 
