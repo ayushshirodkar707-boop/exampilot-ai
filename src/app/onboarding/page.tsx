@@ -119,25 +119,21 @@ export default function OnboardingPage() {
     const finalExamName = customExamName || currentExam?.name || selectedExamId;
 
     try {
-      // Parallelize: ensure at least 1500ms loading experience
-      const [res] = await Promise.all([
-        fetch('/api/generate-plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            country: currentCountry.name,
-            exam: finalExamName,
-            examDate: details.examDate,
-            dailyHours: details.dailyHours,
-            selectedSubjects,
-            weakSubjects: details.weakSubjects,
-            strongSubjects: details.strongSubjects,
-            prepLevel: details.prepLevel,
-            dailyRoutine,
-          }),
+      const res = await fetch('/api/generate-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country: currentCountry.name,
+          exam: finalExamName,
+          examDate: details.examDate,
+          dailyHours: details.dailyHours,
+          selectedSubjects,
+          weakSubjects: details.weakSubjects,
+          strongSubjects: details.strongSubjects,
+          prepLevel: details.prepLevel,
+          dailyRoutine,
         }),
-        wait1500ms(),
-      ]);
+      });
 
       const data = await res.json();
 

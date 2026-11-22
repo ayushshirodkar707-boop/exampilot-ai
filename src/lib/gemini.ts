@@ -108,14 +108,14 @@ Respond strictly with valid JSON matching:
   ]
 }`;
 
-  // Try gemini-3.8-flash with a fast 3.5s timeout. If busy or down, fallback instantly.
+  // Try gemini-1.5-flash with a fast 4s timeout. If busy or down, fallback instantly.
   const model = genAI.getGenerativeModel({
-    model: 'gemini-3.8-flash',
+    model: 'gemini-1.5-flash',
     generationConfig: { responseMimeType: 'application/json' },
   });
 
   const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Gemini API 3.5s timeout')), 3500)
+    setTimeout(() => reject(new Error('Gemini API 4s timeout')), 4000)
   );
 
   const generatePromise = model.generateContent(prompt);

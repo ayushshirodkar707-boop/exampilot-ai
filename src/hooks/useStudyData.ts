@@ -1,18 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from './useAuth';
-import {
-  getLocalProfile,
-  setLocalProfile,
-  getLocalPlan,
-  setLocalPlan,
-  getLocalChapters,
-  setLocalChapters,
-  getLocalMockTests,
-  addLocalMockTest,
-  updateLocalStreak,
-} from '@/lib/localStorage';
+import { useAuth } from '@/hooks/useAuth';
 import {
   getUserProfile,
   saveUserProfile,
@@ -24,9 +13,20 @@ import {
   addMockTest as addFirestoreMockTest,
   updateStreak as updateFirestoreStreak,
 } from '@/lib/firestore';
+import {
+  getLocalProfile,
+  setLocalProfile,
+  getLocalPlan,
+  setLocalPlan,
+  getLocalChapters,
+  setLocalChapters,
+  getLocalMockTests,
+  addLocalMockTest,
+  updateLocalStreak,
+} from '@/lib/localStorage';
 import type { UserProfile, StudyPlan, Chapter, MockTest } from '@/types';
 
-interface UseStudyDataReturn {
+export interface UseStudyDataReturn {
   profile: UserProfile | null;
   setProfile: (profile: UserProfile) => Promise<void>;
   plan: StudyPlan | null;
@@ -50,14 +50,11 @@ export function useStudyData(): UseStudyDataReturn {
   const [streak, setStreak] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
-  // Determine the storage backend based on auth state
   const uid = user?.uid ?? null;
-  const useFirestore = !!user;
 
-  // ── Load all data on mount or auth change ─────────────────────────
+  // ── Blazing Fast Local-First Load + Background Cloud Sync ─────────────
   useEffect(() => {
     if (!uid) {
-      // Not authenticated – clear state and stop loading
       setProfileState(null);
       setPlanState(null);
       setChaptersState([]);
@@ -69,116 +66,126 @@ export function useStudyData(): UseStudyDataReturn {
 
     let cancelled = false;
 
-    async function loadData() {
-      setLoading(true);
+    // 1. Instant local read (0ms latency, zero spinner lockup)
+    const localProfile = getLocalProfile();
+    const localPlan = getLocalPlan();
+    const localChapters = getLocalChapters();
+    const localMockTests = getLocalMockTests();
 
-      try {
-        if (useFirestore) {
-          // ── Firestore backend ──────────────────────────────────
-          const [fsProfile, fsPlan, fsChapters, fsMockTests] = await Promise.all([
-            getUserProfile(uid!),
-            getStudyPlan(uid!),
-            getChapters(uid!),
-            getMockTests(uid!),
-          ]);
-
-          if (cancelled) return;
-
-          // If firestore has profile, use it; otherwise fallback to local profile cache
-          const activeProfile = fsProfile ?? getLocalProfile();
-          setProfileState(activeProfile);
-          setPlanState(fsPlan ?? getLocalPlan());
-          setChaptersState(fsChapters.length > 0 ? fsChapters : getLocalChapters());
-          setMockTestsState(fsMockTests.length > 0 ? fsMockTests : getLocalMockTests());
-          setStreak(activeProfile?.streak ?? 0);
-        } else {
-          const localProfile = getLocalProfile();
-          const localPlan = getLocalPlan();
-          const localChapters = getLocalChapters();
-          const localMockTests = getLocalMockTests();
-
-          if (cancelled) return;
-
-          setProfileState(localProfile);
-          setPlanState(localPlan);
-          setChaptersState(localChapters);
-          setMockTestsState(localMockTests);
-          setStreak(localProfile?.streak ?? 0);
-        }
-      } catch (error) {
-        console.error('Failed to load study data:', error);
-        // Fallback to local cache so user never sees blank screen
-        const localProfile = getLocalProfile();
-        setProfileState(localProfile);
-        setPlanState(getLocalPlan());
-        setChaptersState(getLocalChapters());
-        setMockTestsState(getLocalMockTests());
-        setStreak(localProfile?.streak ?? 0);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (localPlan || localProfile) {
+      setProfileState(localProfile);
+      setPlanState(localPlan);
+      setChaptersState(localChapters);
+      setMockTestsState(localMockTests);
+      setStreak(localProfile?.streak ?? 0);
+      setLoading(false); // UI renders IMMEDIATELY!
     }
 
-    loadData();
+    // 2. Cloud sync in background with a tight 2.5-second timeout
+    const fetchCloud = Promise.all([
+      getUserProfile(uid),
+      getStudyPlan(uid),
+      getChapters(uid),
+      getMockTests(uid),
+    ]);
+
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Cloud sync timeout')), 2500)
+    );
+
+    Promise.race([fetchCloud, timeout])
+      .then(([fsProfile, fsPlan, fsChapters, fsMockTests]: any) => {
+        if (cancelled) return;
+
+        if (fsProfile) {
+          setProfileState(fsProfile);
+          setLocalProfile(fsProfile);
+          setStreak(fsProfile.streak ?? 0);
+        }
+        if (fsPlan) {
+          setPlanState(fsPlan);
+          setLocalPlan(fsPlan);
+        }
+        if (fsChapters && fsChapters.length > 0) {
+          setChaptersState(fsChapters);
+          setLocalChapters(fsChapters);
+        }
+        if (fsMockTests && fsMockTests.length > 0) {
+          setMockTestsState(fsMockTests);
+        }
+      })
+      .catch((err) => {
+        // Cloud timeout or offline: silently keep instant local data
+        console.info('Cloud sync deferred, using local speed cache:', err?.message || err);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [uid, useFirestore]);
+  }, [uid]);
 
-  // ── Setters ────────────────────────────────────────────────────────
+  // ── Setters (Always instant localStorage + non-blocking cloud sync) ──
 
   const setProfile = useCallback(
     async (newProfile: UserProfile) => {
       setProfileState(newProfile);
       setStreak(newProfile.streak);
+      setLocalProfile(newProfile); // Instant
 
-      if (useFirestore && uid) {
-        await saveUserProfile(uid, newProfile);
-      } else {
-        setLocalProfile(newProfile);
+      if (uid) {
+        saveUserProfile(uid, newProfile).catch((e) =>
+          console.warn('Background profile save notice:', e?.message)
+        );
       }
     },
-    [useFirestore, uid],
+    [uid],
   );
 
   const setPlan = useCallback(
     async (newPlan: StudyPlan) => {
       setPlanState(newPlan);
+      setLocalPlan(newPlan); // Instant
 
-      if (useFirestore && uid) {
-        await saveStudyPlan(uid, newPlan);
-      } else {
-        setLocalPlan(newPlan);
+      if (uid) {
+        saveStudyPlan(uid, newPlan).catch((e) =>
+          console.warn('Background plan save notice:', e?.message)
+        );
       }
     },
-    [useFirestore, uid],
+    [uid],
   );
 
   const setChapters = useCallback(
     async (newChapters: Chapter[]) => {
       setChaptersState(newChapters);
+      setLocalChapters(newChapters); // Instant
 
-      if (useFirestore && uid) {
-        await saveChapters(uid, newChapters);
-      } else {
-        setLocalChapters(newChapters);
+      if (uid) {
+        saveChapters(uid, newChapters).catch((e) =>
+          console.warn('Background chapters save notice:', e?.message)
+        );
       }
     },
-    [useFirestore, uid],
+    [uid],
   );
 
   const addMockTest = useCallback(
     async (test: MockTest) => {
       setMockTestsState((prev) => [test, ...prev]);
+      addLocalMockTest(test); // Instant
 
-      if (useFirestore && uid) {
-        await addFirestoreMockTest(uid, test);
-      } else {
-        addLocalMockTest(test);
+      if (uid) {
+        addFirestoreMockTest(uid, test).catch((e) =>
+          console.warn('Background mock test save notice:', e?.message)
+        );
       }
     },
-    [useFirestore, uid],
+    [uid],
   );
 
   // ── Streak ─────────────────────────────────────────────────────────
@@ -186,17 +193,13 @@ export function useStudyData(): UseStudyDataReturn {
   const updateDailyStreak = useCallback(async () => {
     if (!uid) return;
 
-    let newStreak: number;
-
-    if (useFirestore) {
-      newStreak = await updateFirestoreStreak(uid);
-    } else {
-      newStreak = updateLocalStreak();
-    }
-
+    const newStreak = updateLocalStreak();
     setStreak(newStreak);
 
-    // Keep local profile state in sync
+    updateFirestoreStreak(uid).catch((e) =>
+      console.warn('Background streak save notice:', e?.message)
+    );
+
     setProfileState((prev) =>
       prev
         ? {
@@ -206,7 +209,7 @@ export function useStudyData(): UseStudyDataReturn {
           }
         : prev,
     );
-  }, [useFirestore, uid]);
+  }, [uid]);
 
   return {
     profile,

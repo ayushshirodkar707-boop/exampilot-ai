@@ -64,11 +64,13 @@ export default function DashboardPage() {
   const [showMissedModal, setShowMissedModal] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [resendStatus, setResendStatus] = useState<string | null>(null);
+  const [forceReady, setForceReady] = useState(false);
 
-  // Helper for minimum 1.5s loading
-  const wait1500ms = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-  };
+  // Maximum 2.5s spinner safeguard so users are never trapped on loading
+  useEffect(() => {
+    const timer = setTimeout(() => setForceReady(true), 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleResendVerification = async () => {
     const res = await resendVerificationEmail();
@@ -80,8 +82,8 @@ export default function DashboardPage() {
     }
   };
 
-  // Loading screen
-  if (authLoading || (dataLoading && !plan && isAuthenticated)) {
+  // Loading screen with safeguard
+  if (!forceReady && (authLoading || (dataLoading && !plan && isAuthenticated))) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
         <div className="w-10 h-10 border-3 border-primary-500 border-t-transparent rounded-full animate-spin mb-4" />
@@ -222,24 +224,21 @@ export default function DashboardPage() {
     if (!profile) return;
     setIsRegenerating(true);
     try {
-      const [res] = await Promise.all([
-        fetch('/api/generate-plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            country: profile.country,
-            exam: profile.exam,
-            examDate: profile.examDate,
-            dailyHours: profile.dailyHours,
-            selectedSubjects: profile.selectedSubjects || Array.from(new Set(chapters.map((c) => c.subject))),
-            weakSubjects: profile.weakSubjects,
-            strongSubjects: profile.strongSubjects,
-            prepLevel: profile.prepLevel,
-            dailyRoutine: profile.dailyRoutine,
-          }),
+      const res = await fetch('/api/generate-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country: profile.country,
+          exam: profile.exam,
+          examDate: profile.examDate,
+          dailyHours: profile.dailyHours,
+          selectedSubjects: profile.selectedSubjects || Array.from(new Set(chapters.map((c) => c.subject))),
+          weakSubjects: profile.weakSubjects,
+          strongSubjects: profile.strongSubjects,
+          prepLevel: profile.prepLevel,
+          dailyRoutine: profile.dailyRoutine,
         }),
-        wait1500ms(),
-      ]);
+      });
 
       const data = await res.json();
       if (data.success && data.plan) {
