@@ -17,6 +17,7 @@ import MockTestLogger from '@/components/dashboard/MockTestLogger';
 import PomodoroTimer from '@/components/dashboard/PomodoroTimer';
 import ObjectiveTestArena from '@/components/dashboard/ObjectiveTestArena';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
+import { adjustPlanForChapter } from '@/lib/planAdjuster';
 import type { DayPlan, MockTest, Chapter } from '@/types';
 import {
   Calendar,
@@ -203,15 +204,26 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle chapter status change
+  // Handle chapter status change with smart plan adjustment
   const handleChapterStatusChange = async (
     chapterId: string,
     newStatus: Chapter['status']
   ) => {
+    const targetChapter = chapters.find((c) => c.id === chapterId);
     const updated = chapters.map((c) =>
       c.id === chapterId ? { ...c, status: newStatus } : c
     );
     await setChapters(updated);
+
+    if (targetChapter && plan) {
+      const adjusted = adjustPlanForChapter(
+        plan,
+        targetChapter.name,
+        targetChapter.subject,
+        newStatus
+      );
+      await setPlan(adjusted);
+    }
   };
 
   // Handle Mock Test submission
