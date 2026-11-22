@@ -351,7 +351,7 @@ export default function AuthModal({
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Rahul Sharma"
+                      placeholder="e.g. Alex Smith"
                       className="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800/80 py-2 pl-9 pr-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                     />
                   </div>
