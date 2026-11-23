@@ -17,7 +17,7 @@ import MockTestLogger from '@/components/dashboard/MockTestLogger';
 import PomodoroTimer from '@/components/dashboard/PomodoroTimer';
 import ObjectiveTestArena from '@/components/dashboard/ObjectiveTestArena';
 import LoadingOverlay from '@/components/ui/LoadingOverlay';
-import { adjustPlanForChapter } from '@/lib/planAdjuster';
+import { adjustPlanForChapter, recalibrateForMissedDay } from '@/lib/planAdjuster';
 import type { DayPlan, MockTest, Chapter } from '@/types';
 import {
   Calendar,
@@ -34,6 +34,7 @@ import {
   LogIn,
   Mail,
   ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -63,6 +64,8 @@ export default function DashboardPage() {
   const [testChapter, setTestChapter] = useState<string | undefined>(undefined);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showMissedModal, setShowMissedModal] = useState(false);
+  const [missedStrategy, setMissedStrategy] = useState<'redistribute' | 'shift' | 'weekend'>('redistribute');
+  const [catchUpStatus, setCatchUpStatus] = useState<string | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [resendStatus, setResendStatus] = useState<string | null>(null);
   const [forceReady, setForceReady] = useState(false);
@@ -269,8 +272,25 @@ export default function DashboardPage() {
   };
 
   const confirmMissedDayAdjustment = async () => {
+    if (!plan) return;
     setShowMissedModal(false);
-    await handleRegenerate();
+    setIsRegenerating(true);
+
+    try {
+      const res = recalibrateForMissedDay(plan, {
+        strategy: missedStrategy,
+      });
+
+      if (res.success && res.plan) {
+        await setPlan(res.plan);
+        setCatchUpStatus(res.message);
+        setTimeout(() => setCatchUpStatus(null), 6000);
+      }
+    } catch (e: any) {
+      console.error('Missed day catch-up error:', e);
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const mobileNavItems = [
@@ -290,6 +310,22 @@ export default function DashboardPage() {
         title="Recalibrating Your Study Schedule"
         subtitle="Optimizing upcoming topic blocks around your school & coaching commitments..."
       />
+
+      {/* Dismissable Catch-Up Toast Banner */}
+      {catchUpStatus && (
+        <div className="mb-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-between text-xs sm:text-sm shadow-sm animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-500" />
+            <span className="font-semibold">{catchUpStatus}</span>
+          </div>
+          <button
+            onClick={() => setCatchUpStatus(null)}
+            className="text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 font-bold p-1 text-sm"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Top Countdown Urgency Header */}
       <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-primary-900/90 via-indigo-900/90 to-purple-950/90 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-lg border border-primary-500/20">
@@ -507,33 +543,116 @@ export default function DashboardPage() {
         <AdSidebar />
       </div>
 
-      {/* Missed Day Modal */}
+      {/* Missed Day Catch-Up Modal */}
       {showMissedModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="card max-w-md w-full p-6 space-y-4 shadow-2xl">
+          <div className="card max-w-lg w-full p-6 space-y-5 shadow-2xl border border-[var(--border)]">
             <div className="flex items-center gap-3 text-amber-500">
-              <AlertCircle className="w-6 h-6 shrink-0" />
-              <h3 className="font-bold text-lg text-[var(--foreground)]">
-                Missed Study Hours?
-              </h3>
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-lg text-[var(--foreground)]">
+                  Missed Study Hours? Catch Up Fast
+                </h3>
+                <p className="text-xs text-[var(--muted)]">
+                  No stress! Life happens. Choose how ExamPilot AI should recalibrate your timetable:
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-[var(--muted)] leading-relaxed">
-              No stress! Life happens. ExamPilot AI can instantly recalibrate your remaining syllabus topics across your upcoming study blocks so you stay on schedule without burning out.
-            </p>
-            <div className="flex items-center justify-end gap-2 pt-2">
+
+            {/* Strategy Options */}
+            <div className="space-y-2.5">
+              <label
+                onClick={() => setMissedStrategy('redistribute')}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  missedStrategy === 'redistribute'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30 ring-1 ring-primary-500/40'
+                    : 'border-[var(--border)] bg-[var(--card)] hover:border-gray-400'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="strategy"
+                  checked={missedStrategy === 'redistribute'}
+                  onChange={() => setMissedStrategy('redistribute')}
+                  className="mt-0.5 text-primary-600"
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-[var(--foreground)] flex items-center gap-1.5">
+                    <span>⚡ Smart Micro-Sprints (Recommended)</span>
+                  </div>
+                  <p className="text-[var(--muted)] mt-0.5 leading-relaxed">
+                    Injects missed topics as +20 min micro-sprints across your next 3-4 study days so you catch up without feeling overwhelmed.
+                  </p>
+                </div>
+              </label>
+
+              <label
+                onClick={() => setMissedStrategy('weekend')}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  missedStrategy === 'weekend'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30 ring-1 ring-primary-500/40'
+                    : 'border-[var(--border)] bg-[var(--card)] hover:border-gray-400'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="strategy"
+                  checked={missedStrategy === 'weekend'}
+                  onChange={() => setMissedStrategy('weekend')}
+                  className="mt-0.5 text-primary-600"
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-[var(--foreground)] flex items-center gap-1.5">
+                    <span>📅 Weekend Buffer Catch-Up</span>
+                  </div>
+                  <p className="text-[var(--muted)] mt-0.5 leading-relaxed">
+                    Absorbs missed topics into your upcoming Sunday / Revision buffer session, leaving your weekday routine intact.
+                  </p>
+                </div>
+              </label>
+
+              <label
+                onClick={() => setMissedStrategy('shift')}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  missedStrategy === 'shift'
+                    ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-950/30 ring-1 ring-primary-500/40'
+                    : 'border-[var(--border)] bg-[var(--card)] hover:border-gray-400'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="strategy"
+                  checked={missedStrategy === 'shift'}
+                  onChange={() => setMissedStrategy('shift')}
+                  className="mt-0.5 text-primary-600"
+                />
+                <div className="text-xs">
+                  <div className="font-bold text-[var(--foreground)] flex items-center gap-1.5">
+                    <span>⏩ Calendar Push (+1 Day)</span>
+                  </div>
+                  <p className="text-[var(--muted)] mt-0.5 leading-relaxed">
+                    Shifts upcoming days forward by 1 calendar day. Today becomes a buffer rest day, giving you a fresh start tomorrow.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border)]">
               <button
                 type="button"
                 onClick={() => setShowMissedModal(false)}
-                className="btn-ghost text-xs"
+                className="btn-ghost text-xs py-2 px-3.5"
               >
                 Keep Current Plan
               </button>
               <button
                 type="button"
                 onClick={confirmMissedDayAdjustment}
-                className="btn-primary text-xs py-2 px-4 font-bold"
+                className="btn-primary text-xs py-2.5 px-5 font-bold shadow-md shadow-primary-500/20"
               >
-                Recalibrate My Schedule
+                Apply Catch-Up &amp; Recalibrate
               </button>
             </div>
           </div>
