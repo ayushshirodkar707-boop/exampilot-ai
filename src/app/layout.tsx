@@ -1,9 +1,15 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/hooks/useAuth';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: 'ExamPilot AI — Smart AI Exam Planner & Study Tracker',
@@ -53,10 +59,10 @@ export default function RootLayout({
           ============================================================
         */}
       </head>
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased overflow-x-hidden w-full max-w-full">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
-            <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] selection:bg-primary-500/20 selection:text-primary-600">
+            <div className="min-h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)] selection:bg-primary-500/20 selection:text-primary-600 overflow-x-hidden w-full max-w-full">
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />

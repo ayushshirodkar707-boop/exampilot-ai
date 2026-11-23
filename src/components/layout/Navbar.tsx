@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   GraduationCap,
@@ -45,6 +45,21 @@ export default function Navbar() {
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
 
   const { user, isAuthenticated, signOut } = useAuth();
+
+  // Prevent background scroll and page widening when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [mobileOpen]);
 
   const handleOpenAuth = (mode: 'signin' | 'signup') => {
     setAuthModalMode(mode);
@@ -154,111 +169,113 @@ export default function Navbar() {
             </button>
           </div>
         </nav>
+      </header>
 
-        {/* ── Mobile slide-in panel ── */}
-        <div
-          className={`fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden ${
-            mobileOpen
-              ? 'pointer-events-auto opacity-100'
-              : 'pointer-events-none opacity-0'
-          }`}
-          onClick={() => setMobileOpen(false)}
-        />
+      {/* ── Mobile overlay & drawer (rendered OUTSIDE header to prevent backdrop-filter containing-block bugs) ── */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Dark backdrop overlay */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileOpen(false)}
+          />
 
-        <div
-          className={`fixed right-0 top-0 z-50 flex h-full w-72 flex-col bg-white shadow-xl transition-transform duration-300 ease-in-out dark:bg-gray-900 md:hidden ${
-            mobileOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4 dark:border-gray-800">
-            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-lg font-bold text-transparent dark:from-indigo-400 dark:to-purple-400">
-              ExamPilot AI
-            </span>
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="rounded-full p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="Close menu"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
+          {/* Slide Drawer */}
+          <div
+            className="fixed inset-y-0 right-0 z-50 flex h-full w-full max-w-[280px] flex-col bg-white shadow-2xl transition-all dark:bg-gray-900 border-l border-gray-200 dark:border-gray-800"
+          >
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 py-4 dark:border-gray-800">
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-lg font-bold text-transparent dark:from-indigo-400 dark:to-purple-400">
+                ExamPilot AI
+              </span>
+              <button
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-3 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="rounded-full p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none"
+                aria-label="Close menu"
               >
-                {link.label}
-              </Link>
-            ))}
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-            {isAuthenticated && (
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/40"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Dashboard
-              </Link>
-            )}
-          </div>
+            <div className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-xl px-3.5 py-3 text-base font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  {link.label}
+                </Link>
+              ))}
 
-          <div className="border-t border-gray-200 p-4 dark:border-gray-800">
-            {isAuthenticated ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  {user?.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName ?? 'User'}
-                      className="h-8 w-8 rounded-full border border-gray-200 dark:border-gray-700"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">
-                      {(user?.displayName || user?.email || 'U').charAt(0).toUpperCase()}
+              {isAuthenticated && (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-3 text-base font-semibold text-indigo-600 transition-colors hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950/40"
+                >
+                  <LayoutDashboard className="h-5 w-5" />
+                  Dashboard
+                </Link>
+              )}
+            </div>
+
+            <div className="border-t border-gray-200 p-4 dark:border-gray-800">
+              {isAuthenticated ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2.5 px-1 py-1">
+                    {user?.photoURL ? (
+                      <img
+                        src={user.photoURL}
+                        alt={user.displayName ?? 'User'}
+                        className="h-8 w-8 rounded-full border border-gray-200 dark:border-gray-700"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">
+                        {(user?.displayName || user?.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex flex-col min-w-0">
+                      <span className="truncate text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        {user?.displayName || user?.email?.split('@')[0] || 'Student'}
+                      </span>
                     </div>
-                  )}
-                  <span className="truncate text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {user?.displayName || user?.email || 'Student'}
-                  </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setMobileOpen(false);
+                    }}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-100 hover:text-red-600 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-red-400"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    signOut();
-                    setMobileOpen(false);
-                  }}
-                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-red-600 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-red-400"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => handleOpenAuth('signup')}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 py-2.5 px-4 text-sm font-semibold text-white shadow-md hover:from-primary-700 hover:to-indigo-700 transition-all"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Get Started Free
-                </button>
-                <button
-                  onClick={() => handleOpenAuth('signin')}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 px-4 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-                >
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => handleOpenAuth('signup')}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 py-3 px-4 text-sm font-semibold text-white shadow-md hover:from-primary-700 hover:to-indigo-700 transition-all"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Get Started Free
+                  </button>
+                  <button
+                    onClick={() => handleOpenAuth('signin')}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 py-2.5 px-4 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Sign In
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </header>
+      )}
 
       {/* Auth Modal */}
       <AuthModal

@@ -27,7 +27,7 @@ export default function HomePage() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
       {/* ── Hero Section ── */}
       <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 md:pt-24 md:pb-28 border-b border-[var(--border)]">
         {/* Subtle Background Glow */}
