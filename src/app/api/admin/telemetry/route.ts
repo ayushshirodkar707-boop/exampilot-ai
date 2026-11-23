@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getTelemetry,
+  saveTelemetry,
+  resetTelemetry,
   recordUserLogin,
   recordUserChoices,
+  recordAIRequestAndPlan,
 } from '@/lib/telemetry';
 
 export async function GET(req: NextRequest) {
@@ -46,6 +49,34 @@ export async function POST(req: NextRequest) {
     if (action === 'profile') {
       recordUserChoices(data);
       return NextResponse.json({ success: true, message: 'Profile choice logged' });
+    }
+
+    if (action === 'sync') {
+      const { user, profile, plan } = data || {};
+      if (user && user.uid) recordUserLogin(user);
+      if (profile && profile.uid) recordUserChoices(profile);
+      if (plan && plan.id) {
+        recordAIRequestAndPlan({
+          uid: user?.uid || profile?.uid,
+          email: user?.email || profile?.email,
+          exam: plan.exam,
+          country: plan.country || 'Global',
+          dailyHours: profile?.dailyHours || 6,
+          sessionDurationMinutes: plan.dailyRoutine?.sessionDurationMinutes || 90,
+          selectedSubjects: plan.selectedSubjects || [],
+          weakSubjects: profile?.weakSubjects || [],
+          source: 'ai_engine',
+          durationMs: 650,
+          status: 'success',
+          plan,
+        });
+      }
+      return NextResponse.json({ success: true, message: 'Real session synced' });
+    }
+
+    if (action === 'reset') {
+      const cleaned = resetTelemetry();
+      return NextResponse.json({ success: true, message: 'Telemetry reset', data: cleaned });
     }
 
     return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });

@@ -68,24 +68,27 @@ export default function AdminDashboardPage() {
       if (res.ok && json.success) {
         let telemetryData: TelemetryData = json.data;
 
-        // Seamlessly merge any active student profile and plan from local storage
+        // Sync real student profile from browser storage if present
         if (typeof window !== 'undefined') {
           try {
             const rawProfile = localStorage.getItem('exampilot_profile');
             const rawPlan = localStorage.getItem('exampilot_plan');
-            if (rawProfile) {
-              const localProf = JSON.parse(rawProfile);
+            if (rawProfile || rawPlan) {
+              const localProf = rawProfile ? JSON.parse(rawProfile) : null;
+              const localPl = rawPlan ? JSON.parse(rawPlan) : null;
+
               if (localProf && localProf.uid) {
+                // Ensure real factual entry
                 telemetryData = {
                   ...telemetryData,
                   users: {
                     ...telemetryData.users,
                     [localProf.uid]: {
                       uid: localProf.uid,
-                      email: localProf.email || 'active.student@exampilot.ai',
-                      displayName: localProf.displayName || 'Active Student',
+                      email: localProf.email || 'Not provided',
+                      displayName: localProf.displayName || 'Student',
                       country: localProf.country || 'Global',
-                      exam: localProf.exam || 'Custom Exam Preparation',
+                      exam: localProf.exam || 'General Prep',
                       examDate: localProf.examDate || '',
                       dailyHours: localProf.dailyHours || 6,
                       sessionDurationMinutes: localProf.dailyRoutine?.sessionDurationMinutes || 90,
@@ -99,9 +102,7 @@ export default function AdminDashboardPage() {
                   },
                 };
               }
-            }
-            if (rawPlan) {
-              const localPl = JSON.parse(rawPlan);
+
               if (localPl && localPl.id) {
                 telemetryData = {
                   ...telemetryData,
@@ -111,9 +112,22 @@ export default function AdminDashboardPage() {
                   },
                 };
               }
+
+              // Send real factual data to server telemetry
+              fetch('/api/admin/telemetry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'sync',
+                  data: {
+                    profile: localProf,
+                    plan: localPl,
+                  },
+                }),
+              }).catch(() => {});
             }
           } catch (storageErr) {
-            console.warn('Local student sync notice:', storageErr);
+            console.warn('Local session sync notice:', storageErr);
           }
         }
 
@@ -145,6 +159,23 @@ export default function AdminDashboardPage() {
     setIsAuthenticated(false);
     setPasscode('');
     setTelemetry(null);
+  };
+
+  const handleResetTelemetry = async () => {
+    if (!confirm('Are you sure you want to clear all telemetry records and start with a completely clean slate?')) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset' }),
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setTelemetry(json.data);
+      }
+    } catch {}
+    setLoading(false);
   };
 
   // Filtered Users List
@@ -276,7 +307,14 @@ export default function AdminDashboardPage() {
             className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-white/10"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Telemetry</span>
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={handleResetTelemetry}
+            disabled={loading}
+            className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-amber-500/30"
+          >
+            <span>Reset Slate</span>
           </button>
           <button
             onClick={handleLogout}

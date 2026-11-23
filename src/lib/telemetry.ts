@@ -83,195 +83,17 @@ function getTelemetryFilePath(): string {
   }
 }
 
-// Generate rich initial baseline so admin dashboard always reflects verified metrics
-function generateBaselineTelemetry(): TelemetryData {
-  const now = new Date().toISOString();
-  const today = now.slice(0, 10);
-
-  const initialUsers: Record<string, UserChoiceRecord> = {
-    'user_ayush_admin': {
-      uid: 'user_ayush_admin',
-      email: 'ayush.shirodkar@exampilot.ai',
-      displayName: 'ayush shirodkar',
-      country: 'India',
-      exam: 'CBSE Class 12 Boards',
-      examDate: '2027-02-15',
-      dailyHours: 6,
-      sessionDurationMinutes: 90,
-      selectedSubjects: ['Physics', 'Chemistry', 'Mathematics', 'Computer Science'],
-      weakSubjects: ['Physics - Electrodynamics', 'Chemistry - Organic Reactions'],
-      strongSubjects: ['Mathematics - Calculus', 'Computer Science - Python'],
-      prepLevel: 'intermediate',
-      dailyRoutine: {
-        hasSchool: true,
-        schoolTimings: '08:00 AM - 02:30 PM',
-        studyBeforeSchool: false,
-        hasCoaching: true,
-        coachingTimings: '04:30 PM - 07:30 PM',
-        otherCommitments: 'Exercise & Revision (1 hour)',
-        studyPreference: 'balanced',
-        sessionDurationMinutes: 90,
-        wakeUpTime: '06:30 AM',
-        sleepTime: '11:30 PM',
-      },
-      updatedAt: now,
-    },
-    'user_alex_smith': {
-      uid: 'user_alex_smith',
-      email: 'alex.smith@gmail.com',
-      displayName: 'Alex Smith',
-      country: 'United States',
-      exam: 'SAT Reasoning Test',
-      examDate: '2027-03-20',
-      dailyHours: 4,
-      sessionDurationMinutes: 60,
-      selectedSubjects: ['Math - Problem Solving', 'Reading & Writing'],
-      weakSubjects: ['Advanced Math - Quadratics'],
-      strongSubjects: ['Reading Comprehension'],
-      prepLevel: 'intermediate',
-      dailyRoutine: {
-        hasSchool: true,
-        schoolTimings: '08:30 AM - 03:00 PM',
-        studyBeforeSchool: true,
-        hasCoaching: false,
-        coachingTimings: '',
-        otherCommitments: 'Track & Field (1.5 hours)',
-        studyPreference: 'early-bird',
-        sessionDurationMinutes: 60,
-        wakeUpTime: '06:00 AM',
-        sleepTime: '11:00 PM',
-      },
-      updatedAt: now,
-    },
-    'user_priya_sharma': {
-      uid: 'user_priya_sharma',
-      email: 'priya.sharma99@outlook.com',
-      displayName: 'Priya Sharma',
-      country: 'India',
-      exam: 'JEE Main (Session 1)',
-      examDate: '2027-01-24',
-      dailyHours: 8,
-      sessionDurationMinutes: 120,
-      selectedSubjects: ['Physics', 'Chemistry', 'Mathematics'],
-      weakSubjects: ['Rotational Dynamics', 'Ionic Equilibrium'],
-      strongSubjects: ['Coordinate Geometry'],
-      prepLevel: 'intermediate',
-      dailyRoutine: {
-        hasSchool: true,
-        schoolTimings: '07:30 AM - 01:30 PM',
-        studyBeforeSchool: false,
-        hasCoaching: true,
-        coachingTimings: '04:00 PM - 08:00 PM',
-        otherCommitments: 'Daily Meditation',
-        studyPreference: 'night-owl',
-        sessionDurationMinutes: 120,
-        wakeUpTime: '06:00 AM',
-        sleepTime: '12:00 AM',
-      },
-      updatedAt: now,
-    },
-  };
-
-  const initialActivities: UserActivityLog[] = [
-    {
-      uid: 'user_ayush_admin',
-      email: 'ayush.shirodkar@exampilot.ai',
-      displayName: 'ayush shirodkar',
-      action: 'login',
-      provider: 'google',
-      timestamp: now,
-    },
-    {
-      uid: 'user_ayush_admin',
-      email: 'ayush.shirodkar@exampilot.ai',
-      displayName: 'ayush shirodkar',
-      action: 'plan_generated',
-      timestamp: now,
-      details: { exam: 'CBSE Class 12 Boards', dailyHours: 6, blockMinutes: 90 },
-    },
-    {
-      uid: 'user_alex_smith',
-      email: 'alex.smith@gmail.com',
-      displayName: 'Alex Smith',
-      action: 'login',
-      provider: 'password',
-      timestamp: now,
-    },
-    {
-      uid: 'user_priya_sharma',
-      email: 'priya.sharma99@outlook.com',
-      displayName: 'Priya Sharma',
-      action: 'profile_updated',
-      timestamp: now,
-      details: { exam: 'JEE Main (Session 1)', dailyHours: 8 },
-    },
-  ];
-
-  const initialRequests: AIRequestLog[] = [
-    {
-      id: `req_${Date.now()}_9a2f1`,
-      timestamp: now,
-      uid: 'user_ayush_admin',
-      email: 'ayush.shirodkar@exampilot.ai',
-      exam: 'CBSE Class 12 Boards',
-      country: 'India',
-      dailyHours: 6,
-      sessionDurationMinutes: 90,
-      selectedSubjects: ['Physics', 'Chemistry', 'Mathematics', 'Computer Science'],
-      weakSubjects: ['Physics - Electrodynamics', 'Chemistry - Organic Reactions'],
-      source: 'ai_engine',
-      durationMs: 840,
-      status: 'success',
-      planId: 'plan_ayush_cbse_2026',
-      totalWeeks: 8,
-      totalDays: 56,
-    },
-    {
-      id: `req_${Date.now() - 3600000}_4c7b2`,
-      timestamp: new Date(Date.now() - 3600000).toISOString(),
-      uid: 'user_alex_smith',
-      email: 'alex.smith@gmail.com',
-      exam: 'SAT Reasoning Test',
-      country: 'United States',
-      dailyHours: 4,
-      sessionDurationMinutes: 60,
-      selectedSubjects: ['Math - Problem Solving', 'Reading & Writing'],
-      weakSubjects: ['Advanced Math - Quadratics'],
-      source: 'ai_engine',
-      durationMs: 910,
-      status: 'success',
-      planId: 'plan_alex_sat_2026',
-      totalWeeks: 6,
-      totalDays: 42,
-    },
-    {
-      id: `req_${Date.now() - 7200000}_1e8d4`,
-      timestamp: new Date(Date.now() - 7200000).toISOString(),
-      uid: 'user_priya_sharma',
-      email: 'priya.sharma99@outlook.com',
-      exam: 'JEE Main (Session 1)',
-      country: 'India',
-      dailyHours: 8,
-      sessionDurationMinutes: 120,
-      selectedSubjects: ['Physics', 'Chemistry', 'Mathematics'],
-      weakSubjects: ['Rotational Dynamics'],
-      source: 'precision_schedule_engine',
-      durationMs: 310,
-      status: 'success',
-      planId: 'plan_priya_jee_2026',
-      totalWeeks: 12,
-      totalDays: 84,
-    },
-  ];
-
+// Factual clean starting state — ZERO fake users, ZERO fake counts
+function getCleanTelemetry(): TelemetryData {
+  const today = new Date().toISOString().slice(0, 10);
   return {
-    users: initialUsers,
-    activities: initialActivities,
-    aiRequests: initialRequests,
+    users: {},
+    activities: [],
+    aiRequests: [],
     plans: {},
     stats: {
-      totalRequestsAllTime: 47,
-      requestsToday: 12,
+      totalRequestsAllTime: 0,
+      requestsToday: 0,
       lastResetDate: today,
       dailyLimit: 1500,
       rpmLimit: 15,
@@ -281,7 +103,6 @@ function generateBaselineTelemetry(): TelemetryData {
 
 export function getTelemetry(): TelemetryData {
   if (memoryTelemetryCache) {
-    // Reset daily quota if date flipped
     const today = new Date().toISOString().slice(0, 10);
     if (memoryTelemetryCache.stats.lastResetDate !== today) {
       memoryTelemetryCache.stats.requestsToday = 0;
@@ -301,13 +122,13 @@ export function getTelemetry(): TelemetryData {
       }
     }
   } catch (e) {
-    console.warn('Telemetry read warning, falling back to baseline:', e);
+    console.warn('Telemetry read notice:', e);
   }
 
-  const baseline = generateBaselineTelemetry();
-  memoryTelemetryCache = baseline;
-  saveTelemetry(baseline);
-  return baseline;
+  const clean = getCleanTelemetry();
+  memoryTelemetryCache = clean;
+  saveTelemetry(clean);
+  return clean;
 }
 
 export function saveTelemetry(data: TelemetryData) {
@@ -320,7 +141,14 @@ export function saveTelemetry(data: TelemetryData) {
   }
 }
 
+export function resetTelemetry(): TelemetryData {
+  const clean = getCleanTelemetry();
+  saveTelemetry(clean);
+  return clean;
+}
+
 export function recordUserLogin(user: { uid: string; email: string; displayName?: string; provider?: string }) {
+  if (!user || !user.uid) return;
   try {
     const data = getTelemetry();
     const now = new Date().toISOString();
@@ -344,12 +172,12 @@ export function recordUserLogin(user: { uid: string; email: string; displayName?
         uid: user.uid,
         email: user.email || '',
         displayName: user.displayName || user.email?.split('@')[0] || 'Student',
-        country: 'Global',
-        exam: 'General Exam Preparation',
-        examDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        country: '',
+        exam: '',
+        examDate: '',
         dailyHours: 6,
         sessionDurationMinutes: 90,
-        selectedSubjects: ['Core Theory', 'Problem Solving'],
+        selectedSubjects: [],
         weakSubjects: [],
         strongSubjects: [],
         updatedAt: now,
@@ -367,6 +195,7 @@ export function recordUserLogin(user: { uid: string; email: string; displayName?
 }
 
 export function recordUserChoices(choice: UserChoiceRecord) {
+  if (!choice || !choice.uid) return;
   try {
     const data = getTelemetry();
     data.users[choice.uid] = {
