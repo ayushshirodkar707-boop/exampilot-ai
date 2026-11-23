@@ -66,7 +66,58 @@ export default function AdminDashboardPage() {
 
       const json = await res.json();
       if (res.ok && json.success) {
-        setTelemetry(json.data);
+        let telemetryData: TelemetryData = json.data;
+
+        // Seamlessly merge any active student profile and plan from local storage
+        if (typeof window !== 'undefined') {
+          try {
+            const rawProfile = localStorage.getItem('exampilot_profile');
+            const rawPlan = localStorage.getItem('exampilot_plan');
+            if (rawProfile) {
+              const localProf = JSON.parse(rawProfile);
+              if (localProf && localProf.uid) {
+                telemetryData = {
+                  ...telemetryData,
+                  users: {
+                    ...telemetryData.users,
+                    [localProf.uid]: {
+                      uid: localProf.uid,
+                      email: localProf.email || 'active.student@exampilot.ai',
+                      displayName: localProf.displayName || 'Active Student',
+                      country: localProf.country || 'Global',
+                      exam: localProf.exam || 'Custom Exam Preparation',
+                      examDate: localProf.examDate || '',
+                      dailyHours: localProf.dailyHours || 6,
+                      sessionDurationMinutes: localProf.dailyRoutine?.sessionDurationMinutes || 90,
+                      selectedSubjects: localProf.selectedSubjects || [],
+                      weakSubjects: localProf.weakSubjects || [],
+                      strongSubjects: localProf.strongSubjects || [],
+                      prepLevel: localProf.prepLevel,
+                      dailyRoutine: localProf.dailyRoutine,
+                      updatedAt: localProf.createdAt || new Date().toISOString(),
+                    },
+                  },
+                };
+              }
+            }
+            if (rawPlan) {
+              const localPl = JSON.parse(rawPlan);
+              if (localPl && localPl.id) {
+                telemetryData = {
+                  ...telemetryData,
+                  plans: {
+                    ...telemetryData.plans,
+                    [localPl.id]: localPl,
+                  },
+                };
+              }
+            }
+          } catch (storageErr) {
+            console.warn('Local student sync notice:', storageErr);
+          }
+        }
+
+        setTelemetry(telemetryData);
         setIsAuthenticated(true);
         localStorage.setItem('exampilot_admin_passcode', codeToVerify);
       } else {
