@@ -6,6 +6,7 @@ export interface DailyRoutine {
   coachingTimings: string; // e.g. "04:30 PM - 07:30 PM"
   otherCommitments?: string; // e.g. "Gym & Fitness (1 hour)"
   studyPreference: 'early-bird' | 'night-owl' | 'balanced';
+  sessionDurationMinutes?: number; // How long to study 1 subject in one go: 45, 60, 90, 120
   wakeUpTime?: string;
   sleepTime?: string;
 }
@@ -19,6 +20,7 @@ export interface UserProfile {
   exam: string;
   examDate: string;
   dailyHours: number;
+  sessionDurationMinutes?: number;
   selectedSubjects: string[];
   weakSubjects: string[];
   strongSubjects: string[];

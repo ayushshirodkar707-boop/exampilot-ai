@@ -39,17 +39,19 @@ Student Real-World Commitments & Timings:
 - Study Before School Preference: ${params.dailyRoutine.hasSchool ? (params.dailyRoutine.studyBeforeSchool ? 'YES, student likes early morning study before school' : 'NO, student DOES NOT like studying before school. NEVER schedule a study block before school; shift all study hours to afternoon and evening!') : 'N/A (Full-time)'}
 - Coaching / Tuition: ${params.dailyRoutine.hasCoaching ? params.dailyRoutine.coachingTimings : 'None (Self-study)'}
 - Other Commitments: ${params.dailyRoutine.otherCommitments || 'None'}
+- Preferred Continuous Study Block in 1 Go: ${params.dailyRoutine.sessionDurationMinutes || 90} minutes per subject session
 - Study Energy / Chronotype: ${params.dailyRoutine.studyPreference}
 - Typical Wake Time: ${params.dailyRoutine.wakeUpTime || '06:30 AM'}, Sleep Time: ${params.dailyRoutine.sleepTime || '11:30 PM'}
 `
     : 'Full-time flexible schedule.';
 
-  const prompt = `You are an elite academic flight controller. Create a realistic, highly personalized 4-week day-by-day study schedule.
+  const prompt = `You are the ExamPilot AI academic flight controller. Create a realistic, highly personalized 4-week day-by-day study schedule.
 
 Student Profile:
 - Exam: ${params.exam} (${params.country})
 - Days remaining: ${daysLeft} days
 - Daily study hours target: ${params.dailyHours} hours/day
+- Preferred single-subject block length: ${params.dailyRoutine?.sessionDurationMinutes || 90} minutes in 1 go
 - Selected Examination Subjects: ${params.selectedSubjects.join(', ')}
 - Weak subjects: ${params.weakSubjects.join(', ') || 'None'}
 - Strong subjects: ${params.strongSubjects.join(', ') || 'None'}
@@ -59,10 +61,11 @@ ${routineInfo}
 CRITICAL RULES:
 1. NEVER schedule study sessions during school or coaching hours!
 2. If student does NOT like studying before school, do NOT schedule study blocks before school starts — place their study sessions in afternoon and evening.
-3. Provide exact time slots for each block (e.g. "06:15 AM - 07:45 AM", "03:30 PM - 05:30 PM", "08:00 PM - 10:15 PM").
-4. Apply proven online study strategies: Spaced repetition (1-3-7-21 cycle), 25-question timed MCQ drills, and Feynman active recall in 'actionItem' (e.g. "Derive formulas without notes + 25 timed PYQs").
-5. If board exam, schedule gap-day intensive reviews before papers.
-6. Revision Day every 6th day, Mock Test simulation day every 12th day.
+3. Size study sessions to align with the student's chosen continuous block length of ~${params.dailyRoutine?.sessionDurationMinutes || 90} minutes.
+4. Provide exact time slots for each block (e.g. "06:15 AM - 07:45 AM", "03:30 PM - 05:00 PM", "08:00 PM - 10:15 PM").
+5. Apply proven online study strategies: Spaced repetition (1-3-7-21 cycle), 25-question timed MCQ drills, and Feynman active recall in 'actionItem' (e.g. "Derive formulas without notes + 25 timed PYQs").
+6. If board exam, schedule gap-day intensive reviews before papers.
+7. Revision Day every 6th day, Mock Test simulation day every 12th day.
 
 Respond strictly with valid JSON matching:
 {
@@ -115,7 +118,7 @@ Respond strictly with valid JSON matching:
   });
 
   const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Gemini API 4s timeout')), 4000)
+    setTimeout(() => reject(new Error('ExamPilot AI engine 4s timeout')), 4000)
   );
 
   const generatePromise = model.generateContent(prompt);
@@ -127,5 +130,5 @@ Respond strictly with valid JSON matching:
     return JSON.parse(jsonMatch[0]);
   }
 
-  throw new Error('Could not parse Gemini JSON response');
+  throw new Error('Could not parse ExamPilot AI JSON response');
 }

@@ -93,6 +93,11 @@ export default function DailyRoutineForm({
     initialRoutine?.studyPreference || 'balanced'
   );
 
+  // How long to study 1 subject in one go (minutes)
+  const [sessionDurationMinutes, setSessionDurationMinutes] = useState<number>(
+    initialRoutine?.sessionDurationMinutes ?? 90
+  );
+
   // Other Commitments (Selectable chips)
   const defaultCommitments = ['Gym & Sports (1 hour)', 'Evening walk & Relaxation'];
   const [selectedCommitments, setSelectedCommitments] = useState<string[]>(() => {
@@ -177,6 +182,7 @@ export default function DailyRoutineForm({
       coachingTimings: hasCoaching ? formattedCoachingTimings : 'None (Self-prep only)',
       otherCommitments: selectedCommitments.length > 0 ? selectedCommitments.join(', ') : 'None',
       studyPreference,
+      sessionDurationMinutes,
       wakeUpTime: formattedWakeUpTime,
       sleepTime: formattedSleepTime,
     });
@@ -697,7 +703,86 @@ export default function DailyRoutineForm({
         </div>
       </div>
 
-      {/* 4. Energy Chronotype / Best Study Hours */}
+      {/* 4. Single-Subject Focus Duration in One Go */}
+      <div className="card space-y-3">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-indigo-500 shrink-0" />
+          <div>
+            <h3 className="font-bold text-sm text-[var(--foreground)]">
+              How long do you want to study 1 subject in one go?
+            </h3>
+            <p className="text-xs text-[var(--muted)]">
+              Choose your ideal continuous focus block. The AI flight controller sizes your daily slots around this duration.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          {[
+            {
+              minutes: 45,
+              title: '45 Minutes ⏱️',
+              badge: 'Pomodoro',
+              desc: 'High-intensity burst with fast 10m refresh breaks.',
+            },
+            {
+              minutes: 60,
+              title: '60 Minutes (1 Hr) 🎯',
+              badge: 'Focused',
+              desc: 'Solid single-concept deep dive and solved examples.',
+            },
+            {
+              minutes: 90,
+              title: '90 Minutes (1.5 Hr) 🚀',
+              badge: 'Recommended',
+              desc: 'Optimal for theory, formula derivations & 25 timed PYQs.',
+            },
+            {
+              minutes: 120,
+              title: '120 Minutes (2 Hr) ⚡',
+              badge: 'Deep Marathon',
+              desc: 'Uninterrupted deep work and exam-style problem sets.',
+            },
+          ].map((item) => {
+            const isSelected = sessionDurationMinutes === item.minutes;
+            return (
+              <div
+                key={item.minutes}
+                onClick={() => setSessionDurationMinutes(item.minutes)}
+                className={`p-3.5 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${
+                  isSelected
+                    ? 'border-primary-500 bg-primary-50/60 dark:bg-primary-950/40 ring-2 ring-primary-500 shadow-sm'
+                    : 'border-[var(--border)] bg-[var(--background)] hover:border-primary-400'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <span className="font-bold text-xs text-[var(--foreground)]">{item.title}</span>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        isSelected
+                          ? 'bg-primary-500 text-white'
+                          : 'bg-[var(--border)] text-[var(--muted)]'
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--muted)] leading-relaxed">{item.desc}</p>
+                </div>
+                {isSelected && (
+                  <div className="mt-2 pt-2 border-t border-primary-500/20 text-[11px] font-semibold text-primary-600 dark:text-primary-400 flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5 text-primary-500" />
+                    <span>Active Block Size</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5. Energy Chronotype / Best Study Hours */}
       <div className="card space-y-3">
         <label className="label text-xs">
           When is your focus &amp; energy highest? (Study Chronotype)

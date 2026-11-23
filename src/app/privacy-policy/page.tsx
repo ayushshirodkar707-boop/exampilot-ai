@@ -104,7 +104,7 @@ export default function PrivacyPolicyPage() {
             4. Artificial Intelligence &amp; Generative Processing
           </h2>
           <p>
-            Study schedules are generated using Google Gemini AI models. When you request a study plan, only anonymous academic parameters (exam name, days remaining, daily hours, weak subject list) are transmitted to the API endpoint. We never send your personal identifying information (such as your legal name or email address) to generative AI models.
+            Study schedules are generated using ExamPilot AI proprietary intelligence models. When you request a study plan, only anonymous academic parameters (exam name, days remaining, daily hours, weak subject list) are transmitted to the API endpoint. We never send your personal identifying information (such as your legal name or email address) to generative AI models.
           </p>
         </section>
 

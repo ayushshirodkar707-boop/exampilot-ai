@@ -37,7 +37,7 @@ export default function AboutPage() {
             Students often spend hours formatting static spreadsheet templates, calculating revision calendars, or stressing over which subject to study first. When life happens and a day of study is missed, traditional static timetables collapse, triggering guilt and abandonment.
           </p>
           <p>
-            We created <strong>ExamPilot AI</strong> as an intelligent study flight controller. Combining state-of-the-art generative AI from Google Gemini with proven cognitive science principles — spaced repetition, active recall cycles, and Pomodoro focus intervals — ExamPilot creates realistic, flexible daily study blocks that dynamically adapt whenever life throws you off track.
+            We created <strong>ExamPilot AI</strong> as an intelligent study flight controller. Combining state-of-the-art generative intelligence from ExamPilot AI with proven cognitive science principles — spaced repetition, active recall cycles, and Pomodoro focus intervals — ExamPilot creates realistic, flexible daily study blocks that dynamically adapt whenever life throws you off track.
           </p>
         </div>
       </div>

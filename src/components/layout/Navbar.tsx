@@ -36,6 +36,7 @@ const NAV_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/guides', label: 'Guides' },
   { href: '/about', label: 'About' },
+  { href: '/admin', label: 'Admin' },
 ] as const;
 
 export default function Navbar() {

@@ -29,35 +29,35 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── Hero Section ── */}
-      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 border-b border-[var(--border)]">
+      <section className="relative overflow-hidden pt-12 pb-16 sm:pt-20 sm:pb-24 md:pt-24 md:pb-28 border-b border-[var(--border)]">
         {/* Subtle Background Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-primary-500/15 via-purple-500/10 to-transparent blur-3xl pointer-events-none rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-[600px] h-[250px] sm:h-[350px] bg-gradient-to-tr from-primary-500/15 via-purple-500/10 to-transparent blur-3xl pointer-events-none rounded-full" />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           {/* Eyebrow & Social Proof Badges */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-600 dark:text-primary-400 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-600 dark:text-primary-400 text-[11px] sm:text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
               <span>AI-Powered Exam Preparation for 32+ Global Tests</span>
             </div>
 
             {/* Supported by 10,000+ students all over the world */}
-            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[var(--card)] border border-[var(--border)] shadow-sm text-xs">
-              <div className="flex -space-x-1.5">
-                <span className="inline-flex h-5 w-5 rounded-full bg-indigo-500 text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">A</span>
-                <span className="inline-flex h-5 w-5 rounded-full bg-purple-500 text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">R</span>
-                <span className="inline-flex h-5 w-5 rounded-full bg-emerald-500 text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">S</span>
-                <span className="inline-flex h-5 w-5 rounded-full bg-amber-500 text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">K</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--card)] border border-[var(--border)] shadow-sm text-[11px] sm:text-xs max-w-full">
+              <div className="flex -space-x-1.5 shrink-0">
+                <span className="inline-flex h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-indigo-500 text-[8px] sm:text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">A</span>
+                <span className="inline-flex h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-purple-500 text-[8px] sm:text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">R</span>
+                <span className="inline-flex h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-emerald-500 text-[8px] sm:text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">S</span>
+                <span className="inline-flex h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-amber-500 text-[8px] sm:text-[9px] font-bold text-white items-center justify-center ring-1 ring-[var(--card)]">K</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-amber-400 text-[11px]">★★★★★</span>
-                <span className="font-bold text-[var(--foreground)]">Supported by 10,000+ students all over the world</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="text-amber-400 text-[10px] sm:text-[11px]">★★★★★</span>
+                <span className="font-bold text-[var(--foreground)] truncate">Supported by 10,000+ Students Worldwide</span>
               </div>
             </div>
           </div>
 
           {/* Main Heading */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-[var(--foreground)] max-w-4xl mx-auto leading-[1.1]">
+          <h1 className="text-3xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-[var(--foreground)] max-w-4xl mx-auto leading-[1.15] break-words">
             Turn Exam Stress Into A{' '}
             <span className="bg-gradient-to-r from-primary-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
               Precision Daily Plan
@@ -65,16 +65,16 @@ export default function HomePage() {
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-6 text-base sm:text-xl text-[var(--muted)] max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-4 sm:mt-6 text-sm sm:text-lg text-[var(--muted)] max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
             ExamPilot AI maps your remaining days into balanced morning, afternoon, and evening study blocks — with automated revision cycles, 100-MCQ chapter test arenas, and Pomodoro sprints.
           </p>
 
           {/* Auth Gate / Action Buttons */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 max-w-md mx-auto w-full px-2 sm:px-0">
             {isAuthenticated ? (
               <Link
                 href="/dashboard"
-                className="w-full btn-primary py-3.5 px-6 flex items-center justify-center gap-2 text-base font-bold shadow-xl shadow-primary-500/20"
+                className="w-full btn-primary py-3.5 px-6 flex items-center justify-center gap-2 text-sm sm:text-base font-bold shadow-xl shadow-primary-500/20"
               >
                 <span>Open Your Study Dashboard</span>
                 <ArrowRight className="w-4 h-4" />
@@ -87,21 +87,21 @@ export default function HomePage() {
           </div>
 
           {/* Micro Trust Indicators */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--muted)]">
+          <div className="mt-6 sm:mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-[11px] sm:text-xs text-[var(--muted)]">
             <span className="flex items-center gap-1.5 font-bold text-primary-600 dark:text-primary-400">
-              <Users className="w-4 h-4 text-primary-500" />
-              Supported by 10,000+ Students Worldwide
+              <Users className="w-3.5 h-3.5 text-primary-500 shrink-0" />
+              10,000+ Students Worldwide
             </span>
             <span className="flex items-center gap-1.5 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
               100% Free to Use
             </span>
             <span className="flex items-center gap-1.5 font-medium">
-              <Zap className="w-4 h-4 text-amber-500" />
+              <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               No Credit Card Required
             </span>
             <span className="flex items-center gap-1.5 font-medium">
-              <Globe className="w-4 h-4 text-primary-500" />
+              <Globe className="w-3.5 h-3.5 text-primary-500 shrink-0" />
               India, US, UK, EU &amp; Global
             </span>
           </div>
@@ -164,7 +164,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-[var(--border)] text-xs text-primary-600 dark:text-primary-400 font-semibold flex items-center gap-1">
-                <span>Personalized by Gemini</span>
+                <span>Engineered by ExamPilot AI</span>
               </div>
             </div>
 

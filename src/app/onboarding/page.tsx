@@ -33,6 +33,7 @@ export default function OnboardingPage() {
     coachingTimings: '04:30 PM - 07:30 PM',
     otherCommitments: 'Gym & Sports (1 hour), Evening walk',
     studyPreference: 'balanced',
+    sessionDurationMinutes: 90,
     wakeUpTime: '06:30 AM',
     sleepTime: '11:30 PM',
   });
@@ -42,9 +43,9 @@ export default function OnboardingPage() {
   const [loadingSubtitle, setLoadingSubtitle] = useState('Crafting realistic day-by-day study sessions around your real commitments...');
   const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  // Helper for minimum 1.5 second loading experience requested by user
-  const wait1500ms = async () => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  // Snappy transition helper
+  const waitQuick = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 150));
   };
 
   const currentCountry = countries.find((c) => c.code === selectedCountryCode) || countries[0];
@@ -59,6 +60,17 @@ export default function OnboardingPage() {
     }
   }, [selectedExamId, currentExam]);
 
+  // Seamless auto-redirect to dashboard when user completes login after onboarding
+  useEffect(() => {
+    if (isAuthenticated && typeof window !== 'undefined') {
+      const pending = localStorage.getItem('pending_onboarding_ready');
+      if (pending) {
+        localStorage.removeItem('pending_onboarding_ready');
+        router.push('/dashboard');
+      }
+    }
+  }, [isAuthenticated, router]);
+
   const handleCountrySelect = async (code: string) => {
     setSelectedCountryCode(code);
     setSelectedExamId('');
@@ -66,7 +78,7 @@ export default function OnboardingPage() {
     setIsLoading(true);
     setLoadingTitle(`Loading ${countries.find(c => c.code === code)?.name || ''} Exams`);
     setLoadingSubtitle('Fetching official national and regional examination syllabi...');
-    await wait1500ms();
+    await waitQuick();
     setIsLoading(false);
     setStep(2);
   };
@@ -76,7 +88,7 @@ export default function OnboardingPage() {
     setIsLoading(true);
     setLoadingTitle('Loading Exam Curriculum');
     setLoadingSubtitle('Mapping subject combinations and official topic weightage...');
-    await wait1500ms();
+    await waitQuick();
     setIsLoading(false);
     setStep(3);
   };
@@ -87,7 +99,7 @@ export default function OnboardingPage() {
     setIsLoading(true);
     setLoadingTitle('Configuring Custom Examination');
     setLoadingSubtitle(`Setting up custom curriculum framework for ${name}...`);
-    await wait1500ms();
+    await waitQuick();
     setIsLoading(false);
     setStep(3);
   };
@@ -96,7 +108,7 @@ export default function OnboardingPage() {
     setIsLoading(true);
     setLoadingTitle('Saving Subject Profile');
     setLoadingSubtitle('Preparing real-world daily routine & commitments questionnaire...');
-    await wait1500ms();
+    await waitQuick();
     setIsLoading(false);
     setStep(4);
   };
@@ -106,7 +118,7 @@ export default function OnboardingPage() {
     setIsLoading(true);
     setLoadingTitle('Calibrating Daily Schedule Blocks');
     setLoadingSubtitle('Protecting your school, coaching, and sleep hours from conflict...');
-    await wait1500ms();
+    await waitQuick();
     setIsLoading(false);
     setStep(5);
   };
@@ -114,7 +126,7 @@ export default function OnboardingPage() {
   const handleFinalSubmit = async (details: Omit<OnboardingData, 'country' | 'exam' | 'selectedSubjects' | 'dailyRoutine'>) => {
     setIsLoading(true);
     setLoadingTitle('Synthesizing Precision AI Study Plan');
-    setLoadingSubtitle('Running Gemini AI scheduling engine with your school, coaching, and weak subject parameters...');
+    setLoadingSubtitle('Running ExamPilot AI scheduling engine with your school, coaching, and weak subject parameters...');
 
     const finalExamName = customExamName || currentExam?.name || selectedExamId;
 
@@ -123,6 +135,8 @@ export default function OnboardingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          uid: user?.uid,
+          email: user?.email,
           country: currentCountry.name,
           exam: finalExamName,
           examDate: details.examDate,
@@ -173,15 +187,9 @@ export default function OnboardingPage() {
         }
       });
 
-      if (!isAuthenticated) {
-        setIsLoading(false);
-        setAuthModalOpen(true);
-        return;
-      }
-
-      // Save profile, plan, and syllabus chapters
+      // Save profile, plan, and syllabus chapters locally first
       const newProfile: UserProfile = {
-        uid: user?.uid || 'user',
+        uid: user?.uid || 'guest_user',
         displayName: user?.displayName || user?.email?.split('@')[0] || 'Student',
         email: user?.email || '',
         country: currentCountry.name,
@@ -202,6 +210,22 @@ export default function OnboardingPage() {
       await setPlan(data.plan);
       await setChapters(initialChapters);
 
+      if (!isAuthenticated) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('pending_onboarding_ready', 'true');
+        }
+        setIsLoading(false);
+        setAuthModalOpen(true);
+        return;
+      }
+
+      // Async telemetry sync for admin overview
+      fetch('/api/admin/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'profile', data: newProfile }),
+      }).catch(() => {});
+
       router.push('/dashboard');
     } catch (err: any) {
       console.error('Error during plan generation:', err);
@@ -220,8 +244,17 @@ export default function OnboardingPage() {
       />
 
       {/* Top Stepper Indicator (5 Steps) */}
-      <div className="mb-10 max-w-2xl mx-auto">
-        <div className="flex items-center justify-between text-xs font-semibold text-[var(--muted)] mb-2">
+      <div className="mb-6 sm:mb-10 max-w-2xl mx-auto">
+        {/* Mobile Step Header */}
+        <div className="sm:hidden flex items-center justify-between text-xs font-semibold mb-2">
+          <span className="text-primary-600 dark:text-primary-400 font-bold">
+            Step {step} of 5: {['Country', 'Exam', 'Subjects', 'Daily Routine', 'Strategy'][step - 1]}
+          </span>
+          <span className="text-[var(--muted)] font-mono">{Math.round((step / 5) * 100)}%</span>
+        </div>
+
+        {/* Desktop Step Header */}
+        <div className="hidden sm:flex items-center justify-between text-xs font-semibold text-[var(--muted)] mb-2">
           <span className={step >= 1 ? 'text-primary-600 dark:text-primary-400 font-bold' : ''}>
             1. Country
           </span>

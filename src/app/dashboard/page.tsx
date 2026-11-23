@@ -67,9 +67,9 @@ export default function DashboardPage() {
   const [resendStatus, setResendStatus] = useState<string | null>(null);
   const [forceReady, setForceReady] = useState(false);
 
-  // Maximum 2.5s spinner safeguard so users are never trapped on loading
+  // Maximum 1.2s spinner safeguard so users are never trapped on loading
   useEffect(() => {
-    const timer = setTimeout(() => setForceReady(true), 2500);
+    const timer = setTimeout(() => setForceReady(true), 1200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -87,7 +87,7 @@ export default function DashboardPage() {
   if (!forceReady && (authLoading || (dataLoading && !plan && isAuthenticated))) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center p-6">
-        <div className="w-10 h-10 border-3 border-primary-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-sm text-[var(--muted)]">Loading your personal exam cockpit...</p>
       </div>
     );
@@ -283,7 +283,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="max-w-[1500px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* 1.5s Loading Overlay for regeneration */}
       <LoadingOverlay
         isLoading={isRegenerating}
@@ -292,27 +292,27 @@ export default function DashboardPage() {
       />
 
       {/* Top Countdown Urgency Header */}
-      <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-primary-900/90 via-indigo-900/90 to-purple-950/90 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg border border-primary-500/20">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center font-bold text-2xl shrink-0">
+      <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-primary-900/90 via-indigo-900/90 to-purple-950/90 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 shadow-lg border border-primary-500/20">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center font-bold text-xl sm:text-2xl shrink-0">
             🎓
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase tracking-wider font-semibold opacity-75">
+              <span className="text-[10px] sm:text-xs uppercase tracking-wider font-semibold opacity-75">
                 Target Objective
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
                 On Track
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight">
+            <h1 className="text-base sm:text-xl font-extrabold tracking-tight truncate max-w-[240px] sm:max-w-none">
               {profile?.exam || plan.exam} Countdown
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end sm:self-auto flex-wrap">
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
           <Link
             href="/onboarding"
             className="text-xs px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 transition-colors font-medium border border-white/10"
@@ -320,8 +320,8 @@ export default function DashboardPage() {
             Adjust Exam
           </Link>
 
-          <div className="text-right pl-2 border-l border-white/20">
-            <div className="text-2xl sm:text-3xl font-extrabold text-amber-300 font-mono leading-none">
+          <div className="text-right pl-3 border-l border-white/20">
+            <div className="text-xl sm:text-3xl font-extrabold text-amber-300 font-mono leading-none">
               {daysLeft} Days
             </div>
             <div className="text-[10px] opacity-75 mt-0.5">remaining</div>
@@ -329,8 +329,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Mobile Top Navigation Tabs */}
-      <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none">
+      {/* Mobile Sticky Navigation Tabs */}
+      <div className="lg:hidden sticky top-16 z-30 bg-white/95 dark:bg-gray-950/95 backdrop-blur-md -mx-3 px-3 py-2.5 mb-4 border-b border-[var(--border)] flex items-center gap-1.5 overflow-x-auto scrollbar-none shadow-sm">
         {mobileNavItems.map((item) => {
           const isActive = activeSection === item.id;
           const Icon = item.icon;
@@ -341,10 +341,10 @@ export default function DashboardPage() {
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 isActive
                   ? 'bg-primary-600 text-white shadow-sm'
-                  : 'bg-[var(--card)] text-[var(--muted)] border border-[var(--border)]'
+                  : 'bg-[var(--card)] text-[var(--muted)] border border-[var(--border)] hover:text-[var(--foreground)]'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-3.5 h-3.5 shrink-0" />
               <span>{item.label}</span>
             </button>
           );

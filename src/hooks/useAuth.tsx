@@ -86,6 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       setUser(result.user);
+      fetch('/api/admin/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'login',
+          data: {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            provider: 'google',
+          },
+        }),
+      }).catch(() => {});
       return { success: true };
     } catch (error: any) {
       console.error('Google sign-in error:', error);
@@ -100,6 +113,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const result = await signInWithEmailAndPassword(auth, email.trim(), password);
       setUser(result.user);
+      fetch('/api/admin/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'login',
+          data: {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: result.user.displayName,
+            provider: 'password',
+          },
+        }),
+      }).catch(() => {});
       return { success: true };
     } catch (error: any) {
       console.error('Email sign-in error:', error);
@@ -123,6 +149,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn('Could not auto-send verification email:', verifyErr);
       }
       setUser(result.user);
+      fetch('/api/admin/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'signup',
+          data: {
+            uid: result.user.uid,
+            email: result.user.email,
+            displayName: displayName || result.user.displayName,
+            provider: 'password',
+          },
+        }),
+      }).catch(() => {});
       return { success: true };
     } catch (error: any) {
       console.error('Email sign-up error:', error);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateStudyPlan, isGeminiConfigured } from '@/lib/gemini';
+import { recordAIRequestAndPlan } from '@/lib/telemetry';
 import type { StudyPlan, WeekPlan, DayPlan, TaskBlock, DailyRoutine } from '@/types';
 
 // Concrete topic library mapped by subject to ensure rich topic content
@@ -135,9 +136,12 @@ function createIntelligentFallbackSchedule(params: {
       : ['Core Concepts', 'Problem Solving', 'General Revision'];
 
   const dailyHours = params.dailyHours || 6;
-  const morningMins = Math.round(dailyHours * 60 * 0.35);
-  const afternoonMins = Math.round(dailyHours * 60 * 0.35);
-  const eveningMins = Math.max(45, Math.round(dailyHours * 60 * 0.3));
+  const targetSessionMins = params.dailyRoutine?.sessionDurationMinutes || 90;
+
+  // Size blocks to match preferred single-subject session duration
+  const morningMins = Math.max(targetSessionMins, Math.round(dailyHours * 60 * 0.35));
+  const afternoonMins = Math.max(targetSessionMins, Math.round(dailyHours * 60 * 0.35));
+  const eveningMins = Math.max(Math.min(targetSessionMins, 60), Math.round(dailyHours * 60 * 0.3));
 
   const slots = generateTimeSlotsForRoutine(params.dailyRoutine, params.dailyRoutine?.studyPreference);
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -299,9 +303,12 @@ function createIntelligentFallbackSchedule(params: {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
   try {
     const body = await req.json();
     const {
+      uid,
+      email,
       country,
       exam,
       examDate,
@@ -326,7 +333,7 @@ export async function POST(req: NextRequest) {
         ? selectedSubjects
         : ['Mathematics', 'Physics', 'Chemistry'];
 
-    // 1. Try Gemini API if key is present
+    // 1. Try ExamPilot AI engine if key is present
     if (isGeminiConfigured(customApiKey)) {
       try {
         const aiResponse = await generateStudyPlan({
@@ -352,15 +359,32 @@ export async function POST(req: NextRequest) {
             dailyRoutine,
             weeks: aiResponse.weeks,
           };
+
+          // Record AI telemetry for admin
+          recordAIRequestAndPlan({
+            uid,
+            email,
+            exam,
+            country: country || 'Global',
+            dailyHours: Number(dailyHours) || 6,
+            sessionDurationMinutes: dailyRoutine?.sessionDurationMinutes || 90,
+            selectedSubjects: effectiveSubjects,
+            weakSubjects,
+            source: 'ai_engine',
+            durationMs: Date.now() - startTime,
+            status: 'success',
+            plan,
+          });
+
           return NextResponse.json({
             success: true,
             plan,
-            source: 'gemini',
-            message: 'Generated with Google Gemini AI engine!',
+            source: 'exampilot_ai',
+            message: 'Generated with ExamPilot AI Flight Engine!',
           });
         }
-      } catch (geminiError: any) {
-        console.warn('Gemini AI call failed, falling back to smart heuristic:', geminiError?.message);
+      } catch (aiError: any) {
+        console.warn('ExamPilot AI engine deferred to precision scheduler:', aiError?.message);
       }
     }
 
@@ -377,10 +401,26 @@ export async function POST(req: NextRequest) {
       dailyRoutine,
     });
 
+    // Record Precision Scheduler telemetry for admin
+    recordAIRequestAndPlan({
+      uid,
+      email,
+      exam,
+      country: country || 'Global',
+      dailyHours: Number(dailyHours) || 6,
+      sessionDurationMinutes: dailyRoutine?.sessionDurationMinutes || 90,
+      selectedSubjects: effectiveSubjects,
+      weakSubjects,
+      source: 'precision_schedule_engine',
+      durationMs: Date.now() - startTime,
+      status: 'fallback',
+      plan: fallbackPlan,
+    });
+
     return NextResponse.json({
       success: true,
       plan: fallbackPlan,
-      source: 'heuristic',
+      source: 'exampilot_precision',
       message:
         'Generated with ExamPilot precision schedule engine (incorporating your school & coaching commitments).',
     });
