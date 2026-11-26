@@ -8,6 +8,9 @@ import {
   recordAIRequestAndPlan,
 } from '@/lib/telemetry';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   try {
     const passcode =

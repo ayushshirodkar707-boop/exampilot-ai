@@ -101,6 +101,60 @@ function getCleanTelemetry(): TelemetryData {
   };
 }
 
+// Purge any legacy mock or test data so ONLY 100% genuine user data is returned
+export function purgeMockEntries(data: TelemetryData): TelemetryData {
+  const mockUids = ['user_ayush_admin', 'user_alex_smith', 'user_priya_sharma', 'user_sample'];
+  const mockEmails = ['ayush.shirodkar@exampilot.ai', 'alex.smith@gmail.com', 'priya.sharma99@outlook.com'];
+
+  // 1. Purge legacy mock users
+  if (data.users) {
+    mockUids.forEach((uid) => delete data.users[uid]);
+    Object.keys(data.users).forEach((uid) => {
+      const email = data.users[uid]?.email?.toLowerCase();
+      if (email && mockEmails.includes(email)) {
+        delete data.users[uid];
+      }
+    });
+  }
+
+  // 2. Purge legacy mock activities
+  if (data.activities) {
+    data.activities = data.activities.filter(
+      (a) => !mockUids.includes(a.uid) && !mockEmails.includes(a.email?.toLowerCase())
+    );
+  }
+
+  // 3. Purge legacy mock AI requests
+  if (data.aiRequests) {
+    data.aiRequests = data.aiRequests.filter(
+      (r) =>
+        !(r.uid && mockUids.includes(r.uid)) &&
+        !(r.email && mockEmails.includes(r.email.toLowerCase())) &&
+        !r.id.includes('9a2f1') &&
+        !r.id.includes('4c7b2') &&
+        !r.id.includes('1e8d4')
+    );
+  }
+
+  // 4. Purge legacy mock plans
+  if (data.plans) {
+    delete data.plans['plan_ayush_cbse_2026'];
+    delete data.plans['plan_alex_sat_2026'];
+    delete data.plans['plan_priya_jee_2026'];
+  }
+
+  // 5. Ensure stats reflect genuine counts
+  if (data.stats) {
+    const today = new Date().toISOString().slice(0, 10);
+    data.stats.totalRequestsAllTime = (data.aiRequests || []).length;
+    data.stats.requestsToday = (data.aiRequests || []).filter(
+      (r) => r.timestamp && r.timestamp.slice(0, 10) === today
+    ).length;
+  }
+
+  return data;
+}
+
 export function getTelemetry(): TelemetryData {
   if (memoryTelemetryCache) {
     const today = new Date().toISOString().slice(0, 10);
@@ -108,7 +162,7 @@ export function getTelemetry(): TelemetryData {
       memoryTelemetryCache.stats.requestsToday = 0;
       memoryTelemetryCache.stats.lastResetDate = today;
     }
-    return memoryTelemetryCache;
+    return purgeMockEntries(memoryTelemetryCache);
   }
 
   const filePath = getTelemetryFilePath();
@@ -117,8 +171,10 @@ export function getTelemetry(): TelemetryData {
       const raw = fs.readFileSync(filePath, 'utf-8');
       const data: TelemetryData = JSON.parse(raw);
       if (data && data.stats) {
-        memoryTelemetryCache = data;
-        return data;
+        const sanitized = purgeMockEntries(data);
+        memoryTelemetryCache = sanitized;
+        saveTelemetry(sanitized);
+        return sanitized;
       }
     }
   } catch (e) {

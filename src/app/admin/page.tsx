@@ -24,7 +24,7 @@ import {
   BarChart3,
   Server,
 } from 'lucide-react';
-import type { TelemetryData, UserChoiceRecord, AIRequestLog } from '@/lib/telemetry';
+import { purgeMockEntries, type TelemetryData, type UserChoiceRecord, type AIRequestLog } from '@/lib/telemetry';
 import type { StudyPlan } from '@/types';
 
 export default function AdminDashboardPage() {
@@ -66,9 +66,9 @@ export default function AdminDashboardPage() {
 
       const json = await res.json();
       if (res.ok && json.success) {
-        let telemetryData: TelemetryData = json.data;
+        let telemetryData: TelemetryData = purgeMockEntries(json.data);
 
-        // Sync real student profile from browser storage if present
+        // Sync real student profile from browser storage if present and authentic
         if (typeof window !== 'undefined') {
           try {
             const rawProfile = localStorage.getItem('exampilot_profile');
@@ -77,18 +77,18 @@ export default function AdminDashboardPage() {
               const localProf = rawProfile ? JSON.parse(rawProfile) : null;
               const localPl = rawPlan ? JSON.parse(rawPlan) : null;
 
-              if (localProf && localProf.uid) {
-                // Ensure real factual entry
+              // Only include if authentic user with actual choices
+              if (localProf && localProf.uid && localProf.uid !== 'guest_user' && localProf.exam) {
                 telemetryData = {
                   ...telemetryData,
                   users: {
                     ...telemetryData.users,
                     [localProf.uid]: {
                       uid: localProf.uid,
-                      email: localProf.email || 'Not provided',
+                      email: localProf.email || '',
                       displayName: localProf.displayName || 'Student',
                       country: localProf.country || 'Global',
-                      exam: localProf.exam || 'General Prep',
+                      exam: localProf.exam,
                       examDate: localProf.examDate || '',
                       dailyHours: localProf.dailyHours || 6,
                       sessionDurationMinutes: localProf.dailyRoutine?.sessionDurationMinutes || 90,
@@ -103,7 +103,7 @@ export default function AdminDashboardPage() {
                 };
               }
 
-              if (localPl && localPl.id) {
+              if (localPl && localPl.id && localPl.exam) {
                 telemetryData = {
                   ...telemetryData,
                   plans: {
@@ -114,17 +114,19 @@ export default function AdminDashboardPage() {
               }
 
               // Send real factual data to server telemetry
-              fetch('/api/admin/telemetry', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action: 'sync',
-                  data: {
-                    profile: localProf,
-                    plan: localPl,
-                  },
-                }),
-              }).catch(() => {});
+              if (localProf?.exam || localPl?.exam) {
+                fetch('/api/admin/telemetry', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'sync',
+                    data: {
+                      profile: localProf,
+                      plan: localPl,
+                    },
+                  }),
+                }).catch(() => {});
+              }
             }
           } catch (storageErr) {
             console.warn('Local session sync notice:', storageErr);
@@ -750,7 +752,7 @@ export default function AdminDashboardPage() {
                 <div className="w-full h-3 bg-[var(--border)] rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-emerald-500 via-primary-500 to-indigo-600 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.max(5, usagePercent)}%` }}
+                    style={{ width: `${usagePercent}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-[var(--muted)]">
