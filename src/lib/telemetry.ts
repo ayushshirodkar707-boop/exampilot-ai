@@ -2,66 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import type { DailyRoutine, StudyPlan } from '@/types';
+import {
+  purgeMockEntries,
+  type UserActivityLog,
+  type UserChoiceRecord,
+  type AIRequestLog,
+  type TelemetryData,
+} from './telemetrySanitizer';
 
-export interface UserActivityLog {
-  uid: string;
-  email: string;
-  displayName: string;
-  action: 'login' | 'signup' | 'plan_generated' | 'profile_updated';
-  provider?: string;
-  timestamp: string;
-  details?: any;
-}
-
-export interface UserChoiceRecord {
-  uid: string;
-  email: string;
-  displayName: string;
-  country: string;
-  exam: string;
-  examDate: string;
-  dailyHours: number;
-  sessionDurationMinutes?: number;
-  selectedSubjects: string[];
-  weakSubjects: string[];
-  strongSubjects: string[];
-  prepLevel?: string;
-  dailyRoutine?: DailyRoutine;
-  updatedAt: string;
-}
-
-export interface AIRequestLog {
-  id: string;
-  timestamp: string;
-  uid?: string;
-  email?: string;
-  exam: string;
-  country: string;
-  dailyHours: number;
-  sessionDurationMinutes?: number;
-  selectedSubjects: string[];
-  weakSubjects: string[];
-  source: 'ai_engine' | 'precision_schedule_engine';
-  durationMs: number;
-  status: 'success' | 'fallback' | 'error';
-  planId?: string;
-  totalWeeks?: number;
-  totalDays?: number;
-}
-
-export interface TelemetryData {
-  users: Record<string, UserChoiceRecord>;
-  activities: UserActivityLog[];
-  aiRequests: AIRequestLog[];
-  plans: Record<string, StudyPlan>;
-  stats: {
-    totalRequestsAllTime: number;
-    requestsToday: number;
-    lastResetDate: string;
-    dailyLimit: number;
-    rpmLimit: number;
-  };
-}
+export {
+  purgeMockEntries,
+  type UserActivityLog,
+  type UserChoiceRecord,
+  type AIRequestLog,
+  type TelemetryData,
+};
 
 // ── In-Memory Serverless Cache ─────────────────────────────────────
 let memoryTelemetryCache: TelemetryData | null = null;
@@ -99,60 +54,6 @@ function getCleanTelemetry(): TelemetryData {
       rpmLimit: 15,
     },
   };
-}
-
-// Purge any legacy mock or test data so ONLY 100% genuine user data is returned
-export function purgeMockEntries(data: TelemetryData): TelemetryData {
-  const mockUids = ['user_ayush_admin', 'user_alex_smith', 'user_priya_sharma', 'user_sample'];
-  const mockEmails = ['ayush.shirodkar@exampilot.ai', 'alex.smith@gmail.com', 'priya.sharma99@outlook.com'];
-
-  // 1. Purge legacy mock users
-  if (data.users) {
-    mockUids.forEach((uid) => delete data.users[uid]);
-    Object.keys(data.users).forEach((uid) => {
-      const email = data.users[uid]?.email?.toLowerCase();
-      if (email && mockEmails.includes(email)) {
-        delete data.users[uid];
-      }
-    });
-  }
-
-  // 2. Purge legacy mock activities
-  if (data.activities) {
-    data.activities = data.activities.filter(
-      (a) => !mockUids.includes(a.uid) && !mockEmails.includes(a.email?.toLowerCase())
-    );
-  }
-
-  // 3. Purge legacy mock AI requests
-  if (data.aiRequests) {
-    data.aiRequests = data.aiRequests.filter(
-      (r) =>
-        !(r.uid && mockUids.includes(r.uid)) &&
-        !(r.email && mockEmails.includes(r.email.toLowerCase())) &&
-        !r.id.includes('9a2f1') &&
-        !r.id.includes('4c7b2') &&
-        !r.id.includes('1e8d4')
-    );
-  }
-
-  // 4. Purge legacy mock plans
-  if (data.plans) {
-    delete data.plans['plan_ayush_cbse_2026'];
-    delete data.plans['plan_alex_sat_2026'];
-    delete data.plans['plan_priya_jee_2026'];
-  }
-
-  // 5. Ensure stats reflect genuine counts
-  if (data.stats) {
-    const today = new Date().toISOString().slice(0, 10);
-    data.stats.totalRequestsAllTime = (data.aiRequests || []).length;
-    data.stats.requestsToday = (data.aiRequests || []).filter(
-      (r) => r.timestamp && r.timestamp.slice(0, 10) === today
-    ).length;
-  }
-
-  return data;
 }
 
 export function getTelemetry(): TelemetryData {

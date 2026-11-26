@@ -24,7 +24,7 @@ import {
   BarChart3,
   Server,
 } from 'lucide-react';
-import { purgeMockEntries, type TelemetryData, type UserChoiceRecord, type AIRequestLog } from '@/lib/telemetry';
+import { purgeMockEntries, type TelemetryData, type UserChoiceRecord, type AIRequestLog } from '@/lib/telemetrySanitizer';
 import type { StudyPlan } from '@/types';
 
 export default function AdminDashboardPage() {
